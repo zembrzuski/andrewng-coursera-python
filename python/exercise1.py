@@ -160,3 +160,5 @@ perform_gradient_descent(100, X_normalized, Y_normalized, theta, .001)
 # because of the cost is always decreasing, gradient descent is fine!
 # I am done! I have finished my job by now :)
 # thanks!
+
+print(X_normalized)

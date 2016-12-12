@@ -1,8 +1,11 @@
 
 # this exercise is about neural network learning.
 
+
 from numpy import loadtxt
 import numpy as np
+from xoxo import perform_gradient_checking_first_layer
+from xoxo import perform_gradient_checking_second_layer
 
 X = loadtxt('input/ex4data1.txt', comments="#", delimiter=",", unpack=False)
 
@@ -20,24 +23,30 @@ print('y shape: {}'.format(Y.shape))
 print('theta1 shape: {}'.format(theta1.shape))
 print('theta2 shape: {}'.format(theta2.shape))
 
+
 # In my thetas, each row means a perceptron.
 # In my thetas, each column means a feature.
 
 
-def compute_hypothesis(X, theta):
-    z = np.dot(X, theta.transpose())
+def compute_z(X, theta):
+    return np.dot(X, theta.transpose())
+
+
+def compute_a(z):
     return 1 / (1 + np.exp(-z))
 
 
 # Now, I'll try to do feedforward propagation.
 
 a1 = X
-a2 = compute_hypothesis(a1, theta1)
+z2 = compute_z(a1, theta1)
+a2 = compute_a(z2)
 a2 = np.insert(a2, 0, 1, axis=1)
-a3 = compute_hypothesis(a2, theta2)
+z3 = compute_z(a2, theta2)
+a3 = compute_a(z3)
 hypothesis = a3
 print('a3 shape: {}'.format(a3.shape))
-print(a3[1] > 0.5)
+
 # It seems to be working. I'll implement the cost function now.
 
 
@@ -53,10 +62,10 @@ for i in range(0, 5000):
     Y_matrix[i][answer] = 1
 
 
-
 print('{} - {}'.format(hypothesis[0] > .5, Y_matrix[0]))
 print('{} - {}'.format(hypothesis[500] > .5, Y_matrix[500]))
 print('{} - {}'.format(hypothesis[4999] > .5, Y_matrix[4999]))
+
 
 # Now, I think my Y matrix is correct!
 
@@ -69,6 +78,7 @@ def compute_cost(hypothesis, Y):
 
 
 print(compute_cost(hypothesis, Y_matrix))
+
 
 # Yep! It is working, because the expected value is 0.287 too!
 
@@ -111,11 +121,15 @@ print(compute_cost_with_regularization(hypothesis, Y_matrix, 1, theta1, theta2))
 
 
 def my_sigmoid(z):
+    """ g(z) """
     return 1 / (1 + np.exp(-z))
 
 
 def sigmoid_gradient(z):
-    return np.dot(my_sigmoid(z), 1-my_sigmoid(z))
+    """ g'(z) """
+    sigm = my_sigmoid(z)
+    # return np.dot(sigm, 1-sigm)
+    return sigm * (1-sigm)
 
 
 print("----")
@@ -130,38 +144,99 @@ checking = (my_sigmoid(z+epsilon)-my_sigmoid(z-epsilon))/(2*epsilon)
 print(checking)
 print(sigmoid_gradient(0))
 
+
+# checking if my sigmoid gradient function performs well for matrix.
+
+xoxo = np.array([
+    [1, 2, 3],
+    [4, 5, 6]
+])
+
+checking = (my_sigmoid(xoxo+epsilon)-my_sigmoid(xoxo-epsilon))/(2*epsilon)
+print(sigmoid_gradient(xoxo))
+print(checking)
+
+
 # Yep, my sigmoid_gradient function is correct.
 
 
-print("backpropagation")
 
-# 2.3 Backpropagation
 
-# There are 4 steps
 
-# 1st step: perform forward propagation (I have already done it. I'll just
-# copy and paste it to organize the ideas.
 
-theta1_random = np.random.random(theta1.shape)
-theta2_random = np.random.random(theta2.shape)
+#  2.3 Backpropagation
+# ------------------------
+
+# O professor pediu que cada iteração seja com somente um training example.
+# Mas, para começar, vou fazer com all datasets.
+
+# Step 1: feedforward propagation.
+
+X = loadtxt('input/ex4data1.txt', comments="#", delimiter=",", unpack=False)
 
 a1 = X
-a2 = compute_hypothesis(a1, theta1_random)
+a1 = np.insert(a1, 0, 1, axis=1)
+z2 = compute_z(a1, theta1)
+a2 = compute_a(z2)
 a2 = np.insert(a2, 0, 1, axis=1)
-a3 = compute_hypothesis(a2, theta2_random)
+z3 = compute_z(a2, theta2)
+a3 = compute_a(z3)
 hypothesis = a3
 
-# 2nd step:
-error_layer_3 = a3 - Y_matrix
-
-# 3rd step:
-# error_layer_2 = TODO
-print('theta_2_shape: {}'.format(theta2_random.shape))
-print('error_layer_3_shape: {}'.format(error_layer_3.shape))
-print('----')
+# Step 2
+error_layer_3 = (a3 - Y_matrix)         # (5000, 10)
 
 
+# Step 3
+my_dot = theta2.transpose().dot(error_layer_3.transpose()).transpose()
+# Not sure if I need to remove this column here.
+my_dot = np.delete(my_dot, 0, 1)
+print(my_dot.shape)
+print(sigmoid_gradient(z2).shape)
+error_layer_2 = my_dot * sigmoid_gradient(z2)
+print(error_layer_2.shape)
 
-# aprendi as coisas
-# organizacao dos times (pontos)
-# design: escalar o sistema (minha maior contribuição: levar adiante integração com filas, elastic-search)
+
+# Step 4
+
+# Primeira coisa: vou dar um skip no esquema do delta.
+# Primeiro, vou fazer as multiplicações para ver se o shape tá batendo.
+
+# TODO completar meu delta layer
+delta_layer_2 = error_layer_3.transpose().dot(a2)
+delta_layer_1 = error_layer_2.transpose().dot(a1)
+
+
+# Step 5
+gradient_theta_layer_2 = delta_layer_2 / len(Y)
+gradient_theta_layer_1 = delta_layer_1 / len(Y)
+
+print("deu deu deu")
+
+epsilon = .00001
+
+perform_gradient_checking_first_layer(epsilon, 0, 0, X, Y_matrix,
+                                      theta1, theta2,
+                                      gradient_theta_layer_1, gradient_theta_layer_2)
+
+perform_gradient_checking_first_layer(epsilon, 2, 8, X, Y_matrix,
+                                      theta1, theta2,
+                                      gradient_theta_layer_1, gradient_theta_layer_2)
+
+perform_gradient_checking_first_layer(epsilon, 9, 13, X, Y_matrix,
+                                      theta1, theta2,
+                                      gradient_theta_layer_1, gradient_theta_layer_2)
+
+print('---')
+
+perform_gradient_checking_second_layer(epsilon, 0, 0, X, Y_matrix,
+                                      theta1, theta2,
+                                      gradient_theta_layer_1, gradient_theta_layer_2)
+
+perform_gradient_checking_second_layer(epsilon, 2, 8, X, Y_matrix,
+                                      theta1, theta2,
+                                      gradient_theta_layer_1, gradient_theta_layer_2)
+
+
+
+# Everything is performing fine now. I'll implement now regularized neural network.

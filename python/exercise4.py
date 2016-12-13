@@ -6,6 +6,8 @@ from numpy import loadtxt
 import numpy as np
 from xoxo import perform_gradient_checking_first_layer
 from xoxo import perform_gradient_checking_second_layer
+from xoxo import perform_gradient_checking_first_layer_regularization
+from xoxo import perform_gradient_checking_second_layer_regularization
 
 X = loadtxt('input/ex4data1.txt', comments="#", delimiter=",", unpack=False)
 
@@ -213,30 +215,42 @@ gradient_theta_layer_1 = delta_layer_1 / len(Y)
 
 print("deu deu deu")
 
-epsilon = .00001
-
-perform_gradient_checking_first_layer(epsilon, 0, 0, X, Y_matrix,
-                                      theta1, theta2,
-                                      gradient_theta_layer_1, gradient_theta_layer_2)
-
-perform_gradient_checking_first_layer(epsilon, 2, 8, X, Y_matrix,
-                                      theta1, theta2,
-                                      gradient_theta_layer_1, gradient_theta_layer_2)
-
-perform_gradient_checking_first_layer(epsilon, 9, 13, X, Y_matrix,
-                                      theta1, theta2,
-                                      gradient_theta_layer_1, gradient_theta_layer_2)
-
-print('---')
-
-perform_gradient_checking_second_layer(epsilon, 0, 0, X, Y_matrix,
-                                      theta1, theta2,
-                                      gradient_theta_layer_1, gradient_theta_layer_2)
-
-perform_gradient_checking_second_layer(epsilon, 2, 8, X, Y_matrix,
-                                      theta1, theta2,
-                                      gradient_theta_layer_1, gradient_theta_layer_2)
+epsilon = .01
 
 
+perceptron_index = 2
+feature_index = 3
+
+print("jajajajaja")
+
+
+perform_gradient_checking_first_layer(
+    epsilon, perceptron_index, feature_index, X, Y_matrix,
+    theta1, theta2,
+    gradient_theta_layer_1, gradient_theta_layer_2)
 
 # Everything is performing fine now. I'll implement now regularized neural network.
+
+# To achieve this goal, I need to change step 5, only.
+
+llambda = 3
+
+gradient_theta_layer_2_reg = 1 / len(Y) * delta_layer_2 + llambda / len(Y) * first_column_to_zeros(theta2)
+gradient_theta_layer_1_reg = 1 / len(Y) * delta_layer_1 + llambda / len(Y) * first_column_to_zeros(theta1)
+
+# Not sure if it is correct. I shall make gradient checking now.
+
+print("ué, bombou")
+perform_gradient_checking_first_layer_regularization(
+    epsilon, perceptron_index, feature_index, X, Y_matrix,
+    theta1, theta2,
+    gradient_theta_layer_1_reg, gradient_theta_layer_2_reg, llambda)
+
+print("testando a layer 2 agora")
+
+perform_gradient_checking_second_layer_regularization(
+    epsilon, perceptron_index, feature_index, X, Y_matrix,
+    theta1, theta2,
+    gradient_theta_layer_1_reg, gradient_theta_layer_2_reg, llambda)
+
+
